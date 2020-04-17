@@ -21,12 +21,12 @@ import matplotlib as plt
 pd.set_option("display.max.columns", None)
 
 # Insert the path to folder with winemag-data-130k-v2.csv on your desktop
-metadata = pd.read_csv('C:/Users/winemag-data-130k-v2.csv', low_memory=False)
-metadata.head()
+data = pd.read_csv('C:/Users/u565705/OneDrive - O-I/Desktop/Python Project/Wine Recommendation/winemag-data-130k-v2.csv', low_memory=False)
+data.head()
 
 # We have "nan" string values, let's remove them and copy columns which will be needed to build engines
 
-wine = metadata[['title', 'country', 'description', 'points', 'price', 'province', 'variety', 'winery']]
+wine = data[['title', 'country', 'description', 'points', 'price', 'province', 'variety', 'winery']]
 wine = wine.query("title != 'NaN' and country != 'NaN' and description != 'NaN' and points != 'NaN' and price != 'NaN' and province != 'NaN' and variety != 'NaN' and winery != 'NaN'")
 wine = wine.dropna()
 
@@ -93,7 +93,7 @@ def wine_recommendations(title, cosine_sim=cosine_sim):
 
 # To get recommendation, you have to use wine title which index is not higher than size of wine dataframe (for quantile = 80 it is 31019)
 
-Recommendation = wine_recommendations('Château Palmer 2009  Margaux')
+Recommendation = wine_recommendations('Château Mouton Rothschild 2009  Pauillac')
 Recommendation
 
 
@@ -170,7 +170,7 @@ def wine_recommendations(title, cosine_sim=cosine_sim):
     recommendation = pd.concat(frames, keys=['x', 'y'])
     return recommendation
 
-Recommendation = wine_recommendations('Château Palmer 2009  Margaux')
+Recommendation = wine_recommendations('Château Mouton Rothschild 2009  Pauillac')
 Recommendation
 
 """
@@ -293,11 +293,11 @@ def wine_recommendations(title, cosine_sim=cosine_sim):
     recommendation = pd.concat(frames, keys=['x', 'y'])
     return recommendation
 
-Recommendation = wine_recommendations('Château Palmer 2009  Margaux')
+Recommendation = wine_recommendations('Château Mouton Rothschild 2009  Pauillac')
 Recommendation
 
 
-# Results are already good but we can try to limit metadata to the most important to have more varied recommendations. Let's modify the previous step.
+# Not a big difference so we can try to limit metadata to the most important to have more varied recommendations. Let's modify the previous step.
 
 
 def metadata(x):
@@ -314,16 +314,37 @@ indices = pd.Series(wine.index, index=wine['title'])
 
 wine = wine[['title', 'country', 'description', 'points', 'price', 'price segment', 'province', 'variety', 'winery', 'metadata']]
 
-Recommendation = wine_recommendations('Château Palmer 2009  Margaux')
+def wine_recommendations(title, cosine_sim=cosine_sim):
+    
+    # fit index of the wine to the title
+    idx = indices[title]
+    
+    # similarity score between wine which you selected and the others wines in database
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    
+    # sort results by the similarity scores
+    sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
+    
+    # show top 10 results with the highest similarity score
+    sim_scores = sim_scores[1:11]
+
+    # select indices
+    wine_indices = [i[0] for i in sim_scores]
+
+    # return selected wine and the recommendation results in the new dataframe
+    recommendation = wine[['title', 'country', 'description', 'points', 'price', 'price segment', 'province', 'variety', 'winery', 'metadata']].iloc[wine_indices]
+
+    frames = [wine[wine["title"] == title], recommendation]
+    recommendation = pd.concat(frames, keys=['x', 'y'])
+    return recommendation
+
+Recommendation = wine_recommendations('Château Mouton Rothschild 2009  Pauillac')
 Recommendation
 
-""" Now I am happy with the recommendations which we created. As you see, Château Palmer 2009 Margaux is a really good wine (98 points) but the bottle is expensive (380.00 USD). Thanks to our engine, we found a cheaper alternative.
-Château Léoville Poyferré 2010  Saint-Julien has the same number of points but the price is only 92.00 USD and both wines are from Bordeaux, France!
-I hope you had fun and learnt a lot. Thank you!
+"""
+Now I am happy with the recommendations which we created. As you see, Château Mouton Rothschild 2009 Pauillac has a lot of positive reviews (96 points) but it is expensive wine (1300 USD per bottle) and not so many people could afford to buy it. Thanks to the latest version of the engine, we found alternatives which are Portfolio 2013 Limited Edition Red (Napa Valley) (155 USD per bottle) and Château Mouton Rothschild 2014 Pauillac (400 USD per bottle). Before you will buy Château Mouton Rothschild 2009 Pauillac for 1300 USD, take a look on the same wine from 2010 which has the best reviews (100 points!) and the price is "only" 200 USD higher.
 
 Kamil Jankowski
 Stay in touch: https://www.linkedin.com/in/kamil-jankowski-bb8b38165
 
-""'
-
- 
+"""
